@@ -1,0 +1,174 @@
+1.png - Case details dialog at start
+
+LiteCarve opens with the Case details dialog. Examiner name and case number (marked *) are required before an examination can start.
+
+
+2.png - Case dialog: required-field validation
+
+Pressing OK with the required fields empty is refused; the dialog shows 'Examiner name is required. Case number is required.' (same rules as the command line).
+
+
+3.png - Case dialog completed
+
+All case fields filled in: examiner, case number, examiner ID, organisation, evidence description and notes.
+
+
+4.png - Start refused: missing evidence and output
+
+Input validation: with no evidence image or output folder selected, Start is refused and the examiner is told what is missing.
+
+
+5.png - Help → About
+
+About box: LiteCarve 1.0.0, lightweight signature-based file carving for NTFS and FAT32 raw images.
+
+
+6.png - Main window ready (NTFS)
+
+Case details shown at the top; evidence image ~/LiteCarve/NTFS/NTFS_Image_Cpy.dd and output folder selected; all workflow steps 3-15 pending.
+
+
+7.png - Hash confirmation dialog (NTFS)
+
+After the working copy is made, the MD5, SHA-256 and size of the original evidence and the working copy are shown side by side. All MATCH, so 'Proceed with analysis' is offered.
+
+
+8.png - Run in progress (NTFS)
+
+The examination running in a background thread: completed steps in green with their processing time, the current step (Carving scan) highlighted, progress bar and live run log. The window stays responsive.
+
+
+9.png - Run complete message (NTFS)
+
+Message at the end of the run: all steps completed; results are shown in the Results tab.
+
+
+10.png - Run finished: all steps done (NTFS)
+
+Run tab after completion: every step 3-15 done. 'Compare hashes' shows the time spent waiting for the examiner separately (+ wait); the status line shows processing and examiner time.
+
+
+11.png - Results: all (NTFS)
+
+Results tab. Summary: Recovered: 17 complete (VALID/RECOVERED), 1 partial; embedded objects counted separately. 19 rows: 17 carved, 2 TXT recovered via metadata. Rows are tinted by label; password.txt is 'resident (MFT)'.
+
+
+12.png - Results filter: Deleted (NTFS)
+
+Filter Deleted: the nine deleted test files (all recovered) plus Boat.jpg's embedded EXIF thumbnail, which inherits its parent's label.
+
+
+13.png - Results filter: Non-deleted (NTFS)
+
+Filter Non-deleted: the nine allocated files. Nature.mp4 is PARTIAL (40 bytes) because it is fragmented on NTFS.
+
+
+14.png - Results filter: Unattributed (NTFS)
+
+Filter Unattributed: empty. On these zeroed test images every carved file starts at a file-system record.
+
+
+15.png - Results filter: TXT (NTFS)
+
+Filter TXT: password.txt and read.txt, recovered through the file-system metadata (TXT has no signature).
+
+
+16.png - Detail window: Boat.jpg, exported file (NTFS)
+
+Double-clicking a row opens the detail window. Left: every field of the result (identification, location, file system, timestamps, hashes, export path, parser checks, notes). Right: hex view of the exported file (offsets relative to the file), 64 KiB pages.
+
+
+17.png - Detail window: Boat.jpg in the working image (NTFS)
+
+Same result viewed in the working image at the carved offset 17,076,224 (absolute offsets). The carved range is tinted yellow, its first byte (FF D8) orange.
+
+
+18.png - Go to offset: end of Boat.jpg (NTFS)
+
+'Go to offset' 17,732,439: the last carved bytes end with the JPEG end marker FF D9 (tinted); the bytes after the file are not tinted. This is where the JPEG parser decided the file ends.
+
+
+19.png - Re-hash exported file (NTFS)
+
+'Re-hash exported file' recomputes MD5 and SHA-256 of the exported Boat.jpg: MATCH with the recorded values. The selected SHA-256 is shown in full in 'Selected value'.
+
+
+20.png - Detail window: embedded EXIF thumbnail (NTFS)
+
+The thumbnail inside Boat.jpg (EMBEDDED). Not exported by default, so the exported-file view is disabled with the reason shown. In the image the tint starts mid-row exactly at its FF D8.
+
+
+21.png - Detail window: resident TXT password.txt (NTFS)
+
+password.txt (20 bytes) is stored inside its NTFS MFT record (resident), so there is no data offset in the image: the image view is disabled with the reason. The exported file is shown.
+
+
+22.png - Detail window: deleted TXT read.txt in the image (NTFS)
+
+read.txt, a deleted TXT file recovered via metadata. In the image view the first byte of its first data run is marked; separation label Deleted.
+
+
+23.png - Detail window: fragmented Nature.mp4, PARTIAL (NTFS)
+
+Nature.mp4 is stored in two fragments on NTFS. Only 40 bytes (ftyp + free) are tinted: the next mdat box does not fit before the end of the image. The note 'File system records 2 data runs (fragmented); carving recovered only the first fragment' is selected.
+
+
+24.png - Detail window: Video.mp4 parser checks (NTFS)
+
+Video.mp4 (deleted, VALID): the parser checks list the MP4 boxes walked and the vendor box 'beam' that was skipped (decision C-5).
+
+
+25.png - Hash confirmation dialog (FAT32)
+
+FAT32 image: original and working copy MD5/SHA-256/size all MATCH.
+
+
+26.png - Run finished: all steps done (FAT32)
+
+FAT32 run complete: every step done.
+
+
+27.png - Results: all (FAT32)
+
+FAT32 results. Summary: Recovered: 18 complete (VALID/RECOVERED), 0 partial. Nature.mp4 is contiguous on FAT32 and recovered VALID.
+
+
+28.png - Detail window: FAT timestamps (FAT32)
+
+On FAT32 timestamps are shown as stored on disk, marked 'FAT local, no zone' (FAT stores no time zone).
+
+
+29.png - Detail window: deleted FAT file note (FAT32)
+
+read.txt on FAT32 (deleted): the note explains that the data run was reconstructed by TSK assuming contiguous clusters.
+
+
+30.png - Detail window: Nature.mp4 VALID (FAT32)
+
+On FAT32 Nature.mp4 is contiguous: carved VALID with the full 14,717,240 bytes, compare the PARTIAL result on NTFS.
+
+
+31.png - Run cancelled message
+
+Message after Cancel: 'Run cancelled by user.'
+
+
+32.png - Cancelled run
+
+Cancel pressed while the working copy was being made: that step is marked failed, later steps 'not run'. The case folder and a report of the cancelled run are kept; a half-written copy is deleted.
+
+
+33.png - Hash mismatch dialog (simulated)
+
+TEST HARNESS: the working copy was deliberately altered by one byte after copying (the same method as the unit test). The dialog shows MISMATCH in red and offers only 'Abort'; analysis has stopped.
+
+
+34.png - Run ended: hash mismatch message (simulated)
+
+Message after the simulated mismatch: the working copy is not identical to the evidence; the run stopped (exit code 2).
+
+
+35.png - Stopped after hash mismatch (simulated)
+
+Run tab after the simulated mismatch: 'Compare hashes' failed and no further step ran; the log shows the ERROR lines. The report so far was written.
+

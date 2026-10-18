@@ -1,0 +1,157 @@
+1.png - Command-line help
+
+litecarve.py --help lists every option: --cli, --image, --output, --examiner, --case (required with --cli), the optional case fields, --export-embedded and --version. Without --cli the GUI starts.
+
+Command(s):
+  $ python3 litecarve.py --help
+
+
+2.png - Version and missing required arguments
+
+--version prints 'LiteCarve 1.0.0'. Running --cli without --output, --examiner and --case is refused with a clear message and exit code 1 (nothing is created).
+
+Command(s):
+  $ python3 litecarve.py --version
+  $ python3 litecarve.py --cli --image ~/LiteCarve/NTFS/NTFS_Image_Cpy.dd; echo "exit code: $?"
+
+
+3.png - Error: evidence image not found
+
+A non-existent image path: the run stops at step 3 with 'Evidence file not found', exit code 1. No case folder is created because the evidence could not be verified.
+
+Command(s):
+  $ python3 litecarve.py --cli --image /no/such/image.dd --output ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/err --examiner 'Naresh Manandhar' --examiner-id E-01 --org AUT --case CLI-ERR-1; echo "exit code: $?"
+
+
+4.png - Error: no NTFS/FAT32 file system
+
+A 4 MiB file of random bytes as evidence: it is hashed, copied, verified and set read-only, then step 8 finds no NTFS or FAT32 file system and the run stops with exit code 1. The case folder and the report so far are kept.
+
+Command(s):
+  $ head -c 4194304 /dev/urandom > ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/random.dd
+  $ python3 litecarve.py --cli --image ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/random.dd --output ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/err --examiner 'Naresh Manandhar' --examiner-id E-01 --org AUT --case CLI-ERR-2 | tail -n 30; echo "exit code: ${PIPESTATUS[0]}"
+
+
+5.png - NTFS run: end of output and exit code
+
+Full examination of the NTFS image from the command line. The end of the output: report hashes, the three hash comparisons (all MATCH), 'Recovered: 17 complete (VALID/RECOVERED), 1 partial', embedded objects counted separately, processing/wall time, report path, exit code 0. Full output saved with tee.
+
+Command(s):
+  $ python3 litecarve.py --cli --image ~/LiteCarve/NTFS/NTFS_Image_Cpy.dd --output ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/NTFS --examiner 'Naresh Manandhar' --examiner-id E-01 --org AUT --case CLI-NTFS --item 'NTFS test image' | tee ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/cli_ntfs.txt; echo "exit code: ${PIPESTATUS[0]}"
+
+
+6.png - NTFS run: start of the output
+
+The first 55 lines of the same run (from the tee copy): tool and environment, case details, evidence opened read-only and hashed (MD5/SHA-256), disk-space check, working copy created and hashed, hashes compared (MATCH) and confirmed automatically by the CLI.
+
+Command(s):
+  $ sed -n '1,55p' ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/cli_ntfs.txt | grep -v '%$'
+
+
+7.png - NTFS run: read-only, partition and metadata steps
+
+Steps 7-9 from the same run: read-only check (working copy changed to 0o444, original already 0o444, ctime note), partition detection (MBR entry 0, TSK slot 2, offset 1,048,576, NTFS, label LC_NTFS), metadata scan (25 entries, 9 deleted) and TXT recovery.
+
+Command(s):
+  $ grep -E ' (read_only|detect_volume|metadata_scan) ' ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/cli_ntfs.txt | grep -v '%$'
+
+
+8.png - NTFS run: carving and correlation
+
+Steps 10-11 from the same run: each carved result (C0002-C0017) with its status, offset, length, MD5 and SHA-256 (C0002 is the EMBEDDED thumbnail, C0017 the 40-byte PARTIAL Nature.mp4), the 3 INVALID JPEG candidates, and the Deleted/Non-deleted label given to each carved file by exact offset match (8 Deleted, 8 Non-deleted, 0 Unattributed, 1 embedded).
+
+Command(s):
+  $ grep -E ' (carve|correlate) ' ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/cli_ntfs.txt | grep -v -E '%$|START|DONE' | cut -c1-190
+
+
+9.png - FAT32 run: end of output and exit code
+
+Full examination of the FAT32 image: all hash comparisons MATCH, 'Recovered: 18 complete (VALID/RECOVERED), 0 partial', exit code 0.
+
+Command(s):
+  $ python3 litecarve.py --cli --image ~/LiteCarve/FAT32/FAT32_Image_Cpy.dd --output ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/FAT32 --examiner 'Naresh Manandhar' --examiner-id E-01 --org AUT --case CLI-FAT32 --item 'FAT32 test image' | tee ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/cli_fat32.txt | tail -n 45; echo "exit code: ${PIPESTATUS[0]}"
+
+
+10.png - FAT32 run: correlation labels
+
+Each carved FAT32 file with its Deleted/Non-deleted label, original path, file-system size and size consistency.
+
+Command(s):
+  $ grep ' correlate ' ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/cli_fat32.txt | grep -v -E 'START|DONE' | cut -c27-200
+
+
+11.png - Option --export-embedded
+
+Run with --export-embedded: the EXIF thumbnail inside Boat.jpg is also written to carved/embedded/ (here on the FAT32 image).
+
+Command(s):
+  $ python3 litecarve.py --cli --image ~/LiteCarve/FAT32/FAT32_Image_Cpy.dd --output ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/embedded --examiner 'Naresh Manandhar' --examiner-id E-01 --org AUT --case CLI-EMB --export-embedded | tail -n 12
+  $ ls -l ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/embedded/*/carved/embedded/
+
+
+12.png - Case folder created by the NTFS run
+
+Every file in the NTFS case folder: verified working copy, carved files sorted into deleted/non_deleted by type (named by 12-digit offset and original name, _PARTIAL for Nature.mp4), TXT files recovered via metadata, and the reports.
+
+Command(s):
+  $ cd ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/NTFS/CLI-NTFS_* && find . -type f -printf '%10s  %p\n' | sort -k2
+
+
+13.png - Integrity checks with standard tools
+
+Independent checks with sha256sum/ls: the working copy is read-only (444) and has the same SHA-256 as the evidence; re-hashing the exported files finds 17 of the 18 ground-truth hashes (Nature.mp4 is fragmented on NTFS).
+
+Command(s):
+  $ cd ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/NTFS/CLI-NTFS_*
+  $ ls -l evidence_copy/
+  $ sha256sum evidence_copy/*.dd ~/LiteCarve/NTFS/NTFS_Image_Cpy.dd
+  $ sha256sum carved/*/*/* metadata_recovered/txt/*/* | cut -d' ' -f1 | grep -cFf <(cut -d' ' -f1 ~/LiteCarve/test_file_hash_sha256.txt)
+
+
+14.png - Run log: final re-hash and report hashes
+
+The last lines of reports/run_log.txt: export summary, final re-hash of evidence and working copy (MATCH), and the MD5/SHA-256 of each report file, written after the reports.
+
+Command(s):
+  $ tail -n 22 ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/NTFS/CLI-NTFS_*/reports/run_log.txt | cut -c1-200
+
+
+15.png - Unit and acceptance tests: full suite
+
+python3 -m unittest discover: all 219 tests pass (parsers, carver, volume/metadata against fls, correlation, reports, GUI, hex viewer, evaluation). The printed lines are from the acceptance tests on both images.
+
+Command(s):
+  $ python3 -m unittest discover -s tests -t . 2>&1 | tail -n 12
+
+
+16.png - Phase 1 tests incl. hash-mismatch path
+
+Verbose run of the evidence-handling tests, including test_mismatch_path (a deliberately altered working copy gives exit code 2, MISMATCH in the report and no permission changes).
+
+Command(s):
+  $ python3 -m unittest tests.test_hashing tests.test_pipeline -v 2>&1 | tail -n 40
+
+
+17.png - Carving acceptance tests
+
+Verbose run of the carver tests: Phase 3 and 4 acceptance on both images (all JPG/PNG/PDF; 18/18 FAT32, 17/18 NTFS with the fragmented Nature.mp4 out of scope) plus the carver unit tests.
+
+Command(s):
+  $ python3 -m unittest tests.test_carver -v 2>&1 | tail -n 34
+
+
+18.png - Evaluation script on LiteCarve's NTFS output
+
+tools/evaluate.py (separate from LiteCarve) on the CLI NTFS case folder: per ground-truth file Match/Not matched, deleted 9/9 (100%), retained 8/9, outputs and the one non-matching output (the 40-byte Nature.mp4 PARTIAL).
+
+Command(s):
+  $ C=$(ls -d ~/LiteCarve/test_runs/cli_screenshots_2026-10-17/NTFS/CLI-NTFS_*/); python3 tools/evaluate.py --results ${C}carved --results ${C}metadata_recovered --truth ~/LiteCarve/test_file_hash_sha256.txt --deleted-list ~/LiteCarve/deleted_list.txt --label 'LiteCarve NTFS (CLI run)'
+
+
+19.png - Evaluation summary table
+
+evaluate.py --table on the combined evaluation of 15 October: LiteCarve, Foremost, Scalpel and PhotoRec on both images.
+
+Command(s):
+  $ python3 tools/evaluate.py --table ~/LiteCarve/evaluation/summary.csv
+
